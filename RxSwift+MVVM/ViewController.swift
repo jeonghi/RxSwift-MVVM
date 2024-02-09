@@ -8,18 +8,18 @@
 import UIKit
 import Then
 import SnapKit
-import RxSwift
+//import RxSwift
 
 let MEMBER_LIST_URL = "https://my.api.mockaroo.com/members_with_avatar.json?key=44ce18f0"
 
-class 나중에생기는데이터<T> {
+class Observable<T> {
   private let task: (@escaping (T) -> Void) -> Void
   
   init(task: @escaping (@escaping (T) -> Void) -> Void) {
     self.task = task
   }
   
-  func 나중에오면(_ f: @escaping (T) -> Void) {
+  func subscribe(_ f: @escaping (T) -> Void) {
     task(f)
   }
 }
@@ -71,20 +71,19 @@ class ViewController: UIViewController {
   }
   
   func downloadJSON(_ url: String) -> Observable<String?> {
-    return Observable.create() { f in
+    return Observable() { f in
       DispatchQueue.global().async {
         let url = URL(string: url)!
         let data = try! Data(contentsOf: url)
         let json = String(data: data, encoding: .utf8)
         DispatchQueue.main.async {
-          f.onNext(json)
+          f(json)
         }
       }
-      return Disposables.create()
     }
   }
   
-  // 유틸리티들..
+  // 유틸리티들.. (기본 기능 + complete 처리, 취소 기능 등.. 추가된 )
   // PromiseKit, Bolt, RxSwift
   
   // MARK: SYNC
@@ -94,16 +93,9 @@ class ViewController: UIViewController {
     self.setVisibleWithAnimation(self.activityIndicator, true)
     
     downloadJSON(MEMBER_LIST_URL)
-      .subscribe { event in
-        switch event {
-        case let .next(json):
-          self.editView.text = json
-          self.setVisibleWithAnimation(self.activityIndicator, false)
-        case .completed:
-          break
-        case .error:
-          break
-        }
+      .subscribe { json in
+        self.editView.text = json
+        self.setVisibleWithAnimation(self.activityIndicator, false)
       }
     
     //    let json: 나중에생기는데이터<String?> = downloadJSON(MEMBER_LIST_URL)
