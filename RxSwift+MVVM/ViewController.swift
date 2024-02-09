@@ -9,9 +9,9 @@ import UIKit
 import Then
 import SnapKit
 
+let MEMBER_LIST_URL = "https://my.api.mockaroo.com/members_with_avatar.json?key=44ce18f0"
+
 class ViewController: UIViewController {
-  
-  let MEMBER_LIST_URL = "https://my.api.mockaroo.com/members_with_avatar.json?key=44ce18f0"
   
   // MARK: IBOutlet
   var timerLabel: UILabel = .init().then {
@@ -28,7 +28,7 @@ class ViewController: UIViewController {
   var editView: UITextView = .init().then {
     $0.backgroundColor = .lightGray.withAlphaComponent(0.5)
   }
-
+  
   // MARK: Life cycle
   
   required init?(coder: NSCoder) {
@@ -57,19 +57,45 @@ class ViewController: UIViewController {
     }
   }
   
+  func downloadJSON(_ url: String, _ completion: @escaping (String?) -> Void){
+    DispatchQueue.global().async {
+      let url = URL(string: url)!
+      let data = try! Data(contentsOf: url)
+      let json = String(data: data, encoding: .utf8)
+      DispatchQueue.main.async {
+        completion(json)
+      }
+    }
+  }
+  
   // MARK: SYNC
   @objc
   func tappedLoadButton(){
     editView.text = ""
     self.setVisibleWithAnimation(self.activityIndicator, true)
     
-    DispatchQueue.global().async {
-      let url = URL(string: self.MEMBER_LIST_URL)!
-      let data = try! Data(contentsOf: url)
-      let json = String(data: data, encoding: .utf8)
-      DispatchQueue.main.async {
+    downloadJSON(MEMBER_LIST_URL) { json in
         self.editView.text = json
         self.setVisibleWithAnimation(self.activityIndicator, false)
+      
+      self.downloadJSON(MEMBER_LIST_URL) { json in
+        self.editView.text = json
+        self.setVisibleWithAnimation(self.activityIndicator, false)
+        
+        self.downloadJSON(MEMBER_LIST_URL) { json in
+          self.editView.text = json
+          self.setVisibleWithAnimation(self.activityIndicator, false)
+          
+          self.downloadJSON(MEMBER_LIST_URL) { json in
+            self.editView.text = json
+            self.setVisibleWithAnimation(self.activityIndicator, false)
+            
+            self.downloadJSON(MEMBER_LIST_URL) { json in
+              self.editView.text = json
+              self.setVisibleWithAnimation(self.activityIndicator, false)
+            }
+          }
+        }
       }
     }
   }
